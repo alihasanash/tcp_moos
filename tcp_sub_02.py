@@ -10,6 +10,9 @@ import threading
 # Add periodic check to send data every 10 seconds if no updates
 # Added error handling for socket communication
 
+# UPDATE NOTES v2.0:
+# Added additional variables for navigation and route information
+
 class MOOSBridge:
     def __init__(self, moos_host="localhost", moos_port=9000, tcp_port=5000):
         self.moos_host = moos_host
@@ -23,7 +26,13 @@ class MOOSBridge:
             "NAV_LAT", "NAV_LONG", "NAV_DEPTH",
             "NAV_HEADING", "NAV_HEADING_OVER_GROUND",
             "NAV_SPEED", "NAV_SPEED_OVER_GROUND",
-            "NAV_YAW", "NAV_Z", "MAP_INFO_REQ", "WAIS_NMEA"
+            "NAV_YAW", "NAV_Z", "MAP_INFO_REQ", "WAIS_NMEA",
+            
+            "NAV_STW", "NAV_DRIFT", "NAV_DRIFT_ANGLE", "NAV_SET",
+            "NAV_ROT", "NAV_DEPTH_BELOW_KEEL",
+            "RTE_WP_BRG", "RTE_XTD", "RTE_CRS",
+            "RTE_CTM", "RTE_DTG", "RTE_TTG",
+            "RTE_ETA"
         ]}
 
         self.client_socket = None
