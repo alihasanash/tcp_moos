@@ -13,6 +13,9 @@ import threading
 # UPDATE NOTES v2.0:
 # Added additional variables for navigation and route information
 
+# UPDATE NOTES v3.0:
+# If not connected to MOOSDB, do not send data to client
+
 class MOOSBridge:
     def __init__(self, moos_host="localhost", moos_port=9000, tcp_port=5000):
         self.moos_host = moos_host
@@ -37,6 +40,7 @@ class MOOSBridge:
 
         self.client_socket = None
         self.last_update_time = time.time()
+        self.moos_connected = False  # status koneksi MOOSDB
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(("0.0.0.0", self.tcp_port))
@@ -55,9 +59,10 @@ class MOOSBridge:
     def periodic_check_thread(self):
         while True:
             time.sleep(1)
-            if time.time() - self.last_update_time >= 10:
+            # hanya kirim periodic jika konek ke MOOSDB
+            if self.moos_connected and time.time() - self.last_update_time >= 10:
                 self.send_to_client(force=True)
-                self.last_update_time = time.time()  # reset so tidak terus-menerus kirim
+                self.last_update_time = time.time()
 
     def run(self):
         if not self.comms.run(self.moos_host, self.moos_port, "MOOSBridge"):
@@ -67,6 +72,10 @@ class MOOSBridge:
         try:
             while True:
                 time.sleep(0.1)
+                # deteksi disconnect MOOSDB
+                if not self.comms.is_connected() and self.moos_connected:
+                    print("[WARN] Disconnected from MOOSDB.")
+                    self.moos_connected = False
         except KeyboardInterrupt:
             print("\n[INFO] Shutting down.")
             if self.client_socket:
@@ -75,6 +84,8 @@ class MOOSBridge:
             self.comms.close(True)
 
     def on_connect(self):
+        self.moos_connected = True
+        print("[INFO] Connected to MOOSDB.")
         for var in self.data:
             self.comms.register(var, 0)
             print(f"[INFO] Subscribed to {var}")
@@ -96,6 +107,10 @@ class MOOSBridge:
         return True
 
     def send_to_client(self, force=False):
+        # jangan kirim kalau tidak konek ke MOOSDB
+        if not self.moos_connected:
+            return
+
         json_data = json.dumps(self.data)
         if self.client_socket:
             try:
